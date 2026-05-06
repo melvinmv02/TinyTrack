@@ -1,0 +1,113 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}Attendance History – TinyTrack{% endblock %}
+{% block topbar_title %}Attendance History{% endblock %}
+
+{% block content %}
+
+<div class="page-header page-header-row">
+  <div>
+    <div class="page-header-title">Attendance History</div>
+    <div class="page-header-sub">
+      {% if student %}Showing records for <strong>{{ student.name }}</strong>{% endif %}
+    </div>
+  </div>
+  {% if children|length > 1 %}
+  <select class="tt-select" style="width:auto;max-width:180px;" onchange="location.href='?child='+this.value">
+    {% for child in children %}
+      <option value="{{ child.pk }}" {% if child == student %}selected{% endif %}>{{ child.name }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+</div>
+
+<!-- Summary Stats -->
+{% if student %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#D1FAE5;color:#059669;"><i class="bi bi-check-circle-fill"></i></div>
+      <div>
+        <div class="stat-value" style="color:#059669;">{{ present_count }}</div>
+        <div class="stat-label">Days Present</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#FEE2E2;color:#DC2626;"><i class="bi bi-x-circle-fill"></i></div>
+      <div>
+        <div class="stat-value" style="color:#DC2626;">{{ absent_count }}</div>
+        <div class="stat-label">Days Absent</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#EEF2FF;color:#4F46E5;"><i class="bi bi-calendar3"></i></div>
+      <div>
+        <div class="stat-value">{{ records|length }}</div>
+        <div class="stat-label">Total Recorded</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#FEF3C7;color:#D97706;"><i class="bi bi-bar-chart-fill"></i></div>
+      <div>
+        {% if records|length > 0 %}
+          {% widthratio present_count records|length 100 as pct %}
+          <div class="stat-value">{{ pct }}%</div>
+        {% else %}
+          <div class="stat-value" style="color:var(--text-light);">—</div>
+        {% endif %}
+        <div class="stat-label">Attendance Rate</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Table -->
+<div class="tt-card" style="overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table class="tt-table">
+      <thead>
+        <tr>
+          <th style="padding-left:20px;">#</th>
+          <th>Date</th>
+          <th>Day</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+        <tr>
+          <td style="padding-left:20px;color:var(--text-light);">{{ forloop.counter }}</td>
+          <td style="font-weight:600;">{{ record.date|date:"M d, Y" }}</td>
+          <td style="color:var(--text-muted);">{{ record.date|date:"l" }}</td>
+          <td>
+            {% if record.status == 'Present' %}
+              <span class="tt-badge badge-present"><i class="bi bi-check-circle-fill" style="font-size:10px;"></i> Present</span>
+            {% else %}
+              <span class="tt-badge badge-absent"><i class="bi bi-x-circle-fill" style="font-size:10px;"></i> Absent</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">
+            <div class="tt-empty">
+              <div class="tt-empty-icon"><i class="bi bi-calendar-x"></i></div>
+              <div class="tt-empty-title">No attendance records</div>
+              <div class="tt-empty-sub">Records will appear here once the teacher marks attendance.</div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

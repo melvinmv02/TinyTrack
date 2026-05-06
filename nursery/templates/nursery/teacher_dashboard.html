@@ -1,0 +1,255 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}Dashboard – TinyTrack{% endblock %}
+{% block topbar_title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header page-header-row">
+  <div>
+    <div class="page-header-title">Good morning, {{ request.user.get_full_name|default:request.user.username }} 👋</div>
+    <div class="page-header-sub">
+      Class: <strong>{{ teacher_class.name }}</strong> 
+      <span class="tt-badge badge-secondary" style="margin-left:8px; font-weight:normal;">
+        {{ teacher_class.get_class_type_display }}
+      </span>
+    </div>
+  </div>
+  <a href="{% url 'teacher_profile' %}" class="tt-btn tt-btn-outline tt-btn-sm">
+    <i class="bi bi-person-gear"></i> My Profile
+  </a>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#EEF2FF;color:#4F46E5;">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ student_count }}</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#D1FAE5;color:#059669;">
+        <i class="bi bi-camera-fill"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ today_activity_count }}</div>
+        <div class="stat-label">Activities Today</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <a href="{% url 'mark_attendance' %}" style="text-decoration:none;" class="stat-card tt-card-hover">
+      <div class="stat-icon" style="background:#FEF3C7;color:#D97706;">
+        <i class="bi bi-calendar-check-fill"></i>
+      </div>
+      <div>
+        <div class="stat-value" style="font-size:14px;margin-bottom:2px;">Attendance</div>
+        <div class="stat-label" style="color:#4F46E5;">Mark today →</div>
+      </div>
+    </a>
+  </div>
+  {% if teacher_class.class_type == 'nursery' %}
+  <div class="col-6 col-lg-3">
+    <a href="{% url 'daily_report' %}" style="text-decoration:none;" class="stat-card tt-card-hover">
+      <div class="stat-icon" style="background:#FEE2E2;color:#DC2626;">
+        <i class="bi bi-journal-text"></i>
+      </div>
+      <div>
+        <div class="stat-value" style="font-size:14px;margin-bottom:2px;">{{ recent_reports|length }}</div>
+        <div class="stat-label">Reports Submitted</div>
+      </div>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% if current_tab == 'overview' %}
+<!-- Two-column layout -->
+<div class="row g-4">
+
+  <!-- Post Activity Form -->
+  <div class="col-lg-5">
+    <div class="tt-card h-100">
+      <div class="tt-card-body">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+          <div style="width:28px;height:28px;border-radius:7px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;color:#4F46E5;font-size:13px;">
+            <i class="bi bi-plus-lg"></i>
+          </div>
+          <h3 style="font-size:14px;font-weight:700;margin:0;">Post New Activity</h3>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="tt-form-group">
+            <label class="tt-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ field.errors }}</div>{% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="tt-btn tt-btn-primary tt-btn-full">
+            <i class="bi bi-send"></i> Post Activity
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Today's Activities grouped by hour -->
+  <div class="col-lg-7">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div>
+        <h3 style="font-size:14px;font-weight:700;margin:0;">Today's Activities</h3>
+        <div style="font-size:12px;color:var(--text-light);margin-top:2px;">Grouped by hour — shows today only</div>
+      </div>
+      <a href="{% url 'my_students' %}" class="tt-btn tt-btn-outline tt-btn-sm">
+        <i class="bi bi-people"></i> My Students
+      </a>
+    </div>
+
+    {% if activities_by_hour %}
+      {% for hour, items in activities_by_hour %}
+
+      <!-- Hour header -->
+      <div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px;">
+        <div style="
+          display:inline-flex;align-items:center;gap:6px;
+          background:#EEF2FF;color:#4F46E5;
+          padding:4px 12px;border-radius:99px;
+          font-size:12px;font-weight:700;flex-shrink:0;
+        ">
+          <i class="bi bi-clock" style="font-size:11px;"></i> {{ hour }}
+        </div>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <span style="font-size:11px;color:var(--text-light);flex-shrink:0;">
+          {{ items|length }} update{{ items|length|pluralize }}
+        </span>
+      </div>
+
+      <!-- Activities in this hour -->
+      {% for activity in items %}
+      <div class="feed-item" style="margin-left:8px;margin-bottom:10px;">
+        <div class="feed-item-header">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#4F46E5,#818CF8);">
+            {{ activity.student.name|first|upper }}
+          </div>
+          <div style="flex:1;">
+            <div class="feed-name">{{ activity.student.name }}</div>
+            <div class="feed-meta">
+              <i class="bi bi-clock" style="font-size:10px;"></i> {{ activity.timestamp|date:"g:i A" }}
+            </div>
+          </div>
+          <span class="tt-badge badge-primary">
+            <i class="bi bi-camera" style="font-size:10px;"></i> Activity
+          </span>
+        </div>
+        <div class="feed-item-body">
+          <p class="feed-text">{{ activity.description }}</p>
+          {% if activity.image %}
+            <img src="{{ activity.image.url }}" alt="Activity" class="feed-item-img">
+          {% endif %}
+          {% if activity.file %}
+            <div style="margin-top:10px;">
+              <a href="{{ activity.file.url }}" class="tt-btn tt-btn-outline tt-btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-text"></i> View Attachment / Assignment
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+      {% endfor %}
+
+    {% else %}
+    <div class="tt-card">
+      <div class="tt-empty">
+        <div class="tt-empty-icon"><i class="bi bi-inbox"></i></div>
+        <div class="tt-empty-title">No activities posted today</div>
+        <div class="tt-empty-sub">Post your first activity using the form on the left. They'll appear here grouped by hour.</div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /col -->
+</div><!-- /row -->
+
+{% elif current_tab == 'activities' %}
+<!-- All Activities Feed -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+  <div>
+    <h3 style="font-size:16px;font-weight:700;margin:0;">All Activity Feed</h3>
+    <div style="font-size:13px;color:var(--text-light);margin-top:2px;">Showing history for all your students</div>
+  </div>
+  <a href="{% url 'teacher_dashboard' %}" class="tt-btn tt-btn-outline tt-btn-sm">
+    <i class="bi bi-arrow-left"></i> Back to Overview
+  </a>
+</div>
+
+{% if activities_by_day %}
+  {% for date_label, items in activities_by_day %}
+  <div style="display:flex;align-items:center;gap:12px;margin:24px 0 14px;">
+    <div style="
+      background:var(--text-primary);color:#fff;
+      padding:5px 14px;border-radius:99px;
+      font-size:12px;font-weight:700;flex-shrink:0;
+    ">
+      <i class="bi bi-calendar3" style="font-size:11px;"></i> {{ date_label }}
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+  </div>
+
+  <div class="row g-3">
+    {% for activity in items %}
+    <div class="col-md-6 col-xl-4">
+      <div class="feed-item h-100" style="margin:0;">
+        <div class="feed-item-header">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#4F46E5,#818CF8);">
+            {{ activity.student.name|first|upper }}
+          </div>
+          <div style="flex:1;">
+            <div class="feed-name">{{ activity.student.name }}</div>
+            <div class="feed-meta">
+              <i class="bi bi-clock" style="font-size:10px;"></i> {{ activity.timestamp|date:"g:i A" }}
+            </div>
+          </div>
+        </div>
+        <div class="feed-item-body">
+          <p class="feed-text">{{ activity.description }}</p>
+          {% if activity.image %}
+            <img src="{{ activity.image.url }}" alt="Activity" class="feed-item-img">
+          {% endif %}
+          {% if activity.file %}
+            <div style="margin-top:10px;">
+              <a href="{{ activity.file.url }}" class="tt-btn tt-btn-outline tt-btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-text"></i> View Attachment
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+{% else %}
+<div class="tt-card">
+  <div class="tt-empty" style="padding:60px 20px;">
+    <div class="tt-empty-icon" style="font-size:40px;">📸</div>
+    <div class="tt-empty-title">No activities found</div>
+    <div class="tt-empty-sub">You haven't posted any activities yet for this class.</div>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

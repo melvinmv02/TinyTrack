@@ -1,0 +1,110 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}Daily Reports – TinyTrack{% endblock %}
+{% block topbar_title %}Daily Reports{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-title">{{ teacher_class.name }} Daily Reports</div>
+  <div class="page-header-sub">Submit a daily summary for each child in your {{ teacher_class.get_class_type_display }} class</div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Form -->
+  <div class="col-lg-4">
+    <div class="tt-card">
+      <div class="tt-card-body">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+          <div style="width:28px;height:28px;border-radius:7px;background:#FEF3C7;color:#D97706;display:flex;align-items:center;justify-content:center;font-size:13px;">
+            <i class="bi bi-journal-plus"></i>
+          </div>
+          <h3 style="font-size:14px;font-weight:700;margin:0;">New Report</h3>
+        </div>
+        <form method="POST">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="tt-form-group">
+            <label class="tt-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ field.errors }}</div>{% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="tt-btn tt-btn-primary tt-btn-full">
+            <i class="bi bi-send"></i> Submit Report
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reports Feed -->
+  <div class="col-lg-8">
+    <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">Recent Reports</h3>
+
+    {% for report in reports %}
+    <div class="feed-item">
+      <div class="feed-item-header">
+        <div class="user-avatar" style="background:linear-gradient(135deg,#F59E0B,#FCD34D);color:#78350F;">
+          {{ report.student.name|first|upper }}
+        </div>
+        <div style="flex:1;">
+          <div class="feed-name">{{ report.student.name }}</div>
+          <div class="feed-meta"><i class="bi bi-calendar3" style="font-size:10px;"></i> {{ report.date|date:"M d, Y" }}</div>
+        </div>
+        <span class="tt-badge badge-gray"><i class="bi bi-journal" style="font-size:10px;"></i> Report</span>
+      </div>
+      <div class="feed-item-body">
+        <!-- Emoji Summary Grid -->
+        <div class="report-mini-grid">
+          {% if report.mood %}
+          <div class="report-mini-cell">
+            <div class="report-mini-emoji">
+              {% if report.mood == 'Happy' %}😊{% elif report.mood == 'Neutral' %}😐{% else %}😢{% endif %}
+            </div>
+            <div class="report-mini-label">Mood</div>
+            <div class="report-mini-val">{{ report.mood }}</div>
+          </div>
+          {% endif %}
+          
+          {% if report.food %}
+          <div class="report-mini-cell">
+            <div class="report-mini-emoji">
+              {% if report.food == 'Ate Well' %}🍽️{% elif report.food == 'Ate Little' %}🥄{% else %}❌{% endif %}
+            </div>
+            <div class="report-mini-label">Food</div>
+            <div class="report-mini-val">{{ report.food }}</div>
+          </div>
+          {% endif %}
+          
+          {% if report.sleep %}
+          <div class="report-mini-cell">
+            <div class="report-mini-emoji">
+              {% if report.sleep == 'Slept Well' %}😴{% elif report.sleep == 'Short Nap' %}💤{% else %}⚡{% endif %}
+            </div>
+            <div class="report-mini-label">Sleep</div>
+            <div class="report-mini-val">{{ report.sleep }}</div>
+          </div>
+          {% endif %}
+        </div>
+        {% if report.activity_notes %}
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-top:0;font-size:13px;color:var(--text-muted);">
+          <i class="bi bi-chat-quote" style="margin-right:6px;color:var(--text-light);"></i>{{ report.activity_notes }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="tt-card">
+      <div class="tt-empty">
+        <div class="tt-empty-icon"><i class="bi bi-journal-x"></i></div>
+        <div class="tt-empty-title">No reports yet</div>
+        <div class="tt-empty-sub">Submit your first daily report using the form.</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

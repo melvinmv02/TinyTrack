@@ -1,0 +1,468 @@
+{% extends 'nursery/base.html' %}
+{% block title %}Chat – {{ other_user.get_full_name|default:other_user.username }} – TinyTrack{% endblock %}
+{% block topbar_title %}Messages{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Layout ── */
+  .chat-shell {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 140px);
+    max-width: 780px;
+    margin: 0 auto;
+  }
+  /* ── Header bar ── */
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #E5E7EB);
+    border-radius: 14px 14px 0 0;
+    margin-bottom: 0;
+  }
+  .chat-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: #fff;
+  }
+  .chat-header-name { font-size: 15px; font-weight: 700; }
+  .chat-header-role { font-size: 11px; color: var(--text-muted,#6B7280); }
+  /* ── Message area ── */
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 20px 10px;
+    background: var(--body-bg, #F8FAFC);
+    border-left: 1px solid var(--border, #E5E7EB);
+    border-right: 1px solid var(--border, #E5E7EB);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-behavior: smooth;
+  }
+  /* ── Bubble ── */
+  .msg-row { display: flex; align-items: flex-end; gap: 8px; }
+  .msg-row.sent { flex-direction: row-reverse; }
+  .msg-row > div {
+    max-width: 75%;
+    display: flex;
+    flex-direction: column;
+  }
+  .msg-row.sent > div { align-items: flex-end; }
+  .msg-row.received > div { align-items: flex-start; }
+
+  .msg-bubble {
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 13px;
+    line-height: 1.5;
+    position: relative;
+    word-break: break-word;
+    width: fit-content;
+  }
+  .msg-row.received .msg-bubble {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #E5E7EB);
+    border-bottom-left-radius: 4px;
+    color: var(--text, #111827);
+  }
+  .msg-row.sent .msg-bubble {
+    background: linear-gradient(135deg, #4F46E5, #6366F1);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .msg-time {
+    font-size: 10px;
+    color: var(--text-light, #9CA3AF);
+    margin-top: 4px;
+    text-align: right;
+  }
+  .msg-row.received .msg-time { text-align: left; }
+  .msg-mini-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+    margin-bottom: 2px;
+  }
+  /* voice player inside bubble */
+  .msg-bubble audio {
+    max-width: 240px;
+    border-radius: 8px;
+  }
+  /* day divider */
+  .day-divider {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted, #9CA3AF);
+    position: relative;
+    margin: 6px 0;
+  }
+  .day-divider::before, .day-divider::after {
+    content: '';
+    display: inline-block;
+    width: 30%;
+    height: 1px;
+    background: var(--border, #E5E7EB);
+    vertical-align: middle;
+    margin: 0 8px;
+  }
+  /* ── Input bar ── */
+  .chat-input-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #E5E7EB);
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+  }
+  .chat-textarea {
+    flex: 1;
+    resize: none;
+    border: 1px solid var(--border, #E5E7EB);
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 13px;
+    outline: none;
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: inherit;
+    background: var(--input-bg, #F9FAFB);
+    color: var(--text, #111827);
+    transition: border .2s;
+  }
+  .chat-textarea:focus { border-color: #4F46E5; background: #fff; }
+  .chat-send-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #4F46E5, #6366F1);
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: opacity .2s, transform .15s;
+  }
+  .chat-send-btn:hover { opacity: .9; transform: scale(1.05); }
+  .chat-send-btn:active { transform: scale(.95); }
+  /* Mic button */
+  .mic-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border, #E5E7EB);
+    background: var(--card-bg, #fff);
+    color: #6B7280;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background .2s, color .2s, border-color .2s;
+  }
+  .mic-btn.recording {
+    background: #FEF2F2;
+    border-color: #FCA5A5;
+    color: #DC2626;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,.3); }
+    50%       { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+  }
+  .recording-indicator {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #DC2626;
+    font-weight: 600;
+  }
+  .recording-indicator.active { display: flex; }
+  .rec-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #DC2626;
+    animation: blink 1s step-start infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  /* uploading spinner */
+  .uploading-msg {
+    font-size: 12px;
+    color: #6B7280;
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+  .uploading-msg.active { display: flex; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-shell">
+
+  <!-- Header -->
+  <div class="chat-header">
+    <a href="{% url 'chat_inbox' %}" style="color:var(--text-muted,#9CA3AF);font-size:18px;line-height:1;text-decoration:none;margin-right:4px;">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div class="chat-avatar"
+         style="background:linear-gradient(135deg,{% if other_user.role == 'teacher' %}#4F46E5,#818CF8{% else %}#059669,#34D399{% endif %});">
+      {{ other_user.username|first|upper }}
+    </div>
+    <div>
+      <div class="chat-header-name">{{ other_user.get_full_name|default:other_user.username }}</div>
+      <div class="chat-header-role">{{ other_user.role|capfirst }}</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <div class="recording-indicator" id="recIndicator">
+        <span class="rec-dot"></span> Recording…
+      </div>
+      <div class="uploading-msg" id="uploadingMsg">
+        <span class="spinner-border spinner-border-sm" role="status" style="width:14px;height:14px;border-width:2px;"></span> Sending…
+      </div>
+      <span style="font-size:11px;color:#10B981;" id="liveStatus"></span>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="chat-messages" id="chatMessages">
+    {% for msg in messages %}
+    {% with last_msg=messages|dictsort:"timestamp"|first %}
+    {% if forloop.first or msg.timestamp|date:"Ymd" != messages|slice:forloop.counter0|last|date:"Ymd" %}
+      <div class="day-divider">
+        {% if msg.timestamp|date:"Ymd" == now|date:"Ymd" %}
+          Today
+        {% elif msg.timestamp|date:"Ymd" == yesterday|date:"Ymd" %}
+          Yesterday
+        {% else %}
+          {{ msg.timestamp|date:"F j, Y" }}
+        {% endif %}
+      </div>
+    {% endif %}
+    {% endwith %}
+    <div class="msg-row {% if msg.sender == request.user %}sent{% else %}received{% endif %}"
+         id="msg-{{ msg.pk }}"
+         data-ts="{{ msg.timestamp.isoformat }}">
+      {% if msg.sender != request.user %}
+      <div class="msg-mini-avatar"
+           style="background:linear-gradient(135deg,{% if msg.sender.role == 'teacher' %}#4F46E5,#818CF8{% else %}#059669,#34D399{% endif %});">
+        {{ msg.sender.username|first|upper }}
+      </div>
+      {% endif %}
+      <div>
+        <div class="msg-bubble">
+          {% if msg.voice %}
+            <audio controls src="{{ msg.voice.url }}"></audio>
+          {% else %}
+            {{ msg.body }}
+          {% endif %}
+        </div>
+        <div class="msg-time">{{ msg.timestamp|date:"H:i" }}</div>
+      </div>
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:40px 0;color:var(--text-muted,#9CA3AF);">
+      <i class="bi bi-chat-heart" style="font-size:32px;display:block;margin-bottom:8px;"></i>
+      No messages yet. Send the first one!
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Input Bar -->
+  <form method="POST" id="textForm" autocomplete="off">
+    {% csrf_token %}
+    <div class="chat-input-bar">
+      <!-- Mic Button -->
+      <button type="button" class="mic-btn" id="micBtn" title="Record voice message">
+        <i class="bi bi-mic-fill"></i>
+      </button>
+      <!-- Text area -->
+      <textarea class="chat-textarea"
+                name="body"
+                id="chatInput"
+                placeholder="Type a message…"
+                rows="1"
+                onkeydown="handleKey(event)"></textarea>
+      <!-- Send -->
+      <button type="submit" class="chat-send-btn" title="Send">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const ME_ID        = {{ request.user.pk }};
+  const OTHER_ID     = {{ other_user.pk }};
+  const POLL_URL     = "{% url 'chat_poll' other_user.pk %}";
+  const VOICE_URL    = "{% url 'chat_send_voice' other_user.pk %}";
+  const CSRF_TOKEN   = "{{ csrf_token }}";
+  const OTHER_ROLE   = "{{ other_user.role }}";
+  const OTHER_INIT   = "{{ other_user.username|first|upper }}";
+
+  // ── Auto-grow textarea ──
+  const ta = document.getElementById('chatInput');
+  ta.addEventListener('input', () => {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  });
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (ta.value.trim()) document.getElementById('textForm').submit();
+    }
+  }
+
+  // ── Scroll to bottom ──
+  function scrollBottom() {
+    const el = document.getElementById('chatMessages');
+    el.scrollTop = el.scrollHeight;
+  }
+  scrollBottom();
+
+  // ── AJAX Polling (every 3 s) ──
+  let lastTs = '';
+  // seed from the last existing message
+  const allRows = document.querySelectorAll('#chatMessages [data-ts]');
+  if (allRows.length) lastTs = allRows[allRows.length - 1].dataset.ts;
+
+  function bubbleHtml(msg) {
+    const isSent = msg.sender_id === ME_ID;
+    const side   = isSent ? 'sent' : 'received';
+    const grad   = OTHER_ROLE === 'teacher'
+      ? 'linear-gradient(135deg,#4F46E5,#818CF8)'
+      : 'linear-gradient(135deg,#059669,#34D399)';
+    const ts = new Date(msg.timestamp);
+    const hm = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+    const content = msg.voice_url
+      ? `<audio controls src="${msg.voice_url}" style="max-width:220px;border-radius:8px;"></audio>`
+      : escHtml(msg.body);
+    const miniAvatar = isSent ? '' : `
+      <div class="msg-mini-avatar" style="background:${grad};">${OTHER_INIT}</div>`;
+    return `
+      <div class="msg-row ${side}" id="msg-${msg.id}" data-ts="${msg.timestamp}">
+        ${miniAvatar}
+        <div>
+          <div class="msg-bubble">${content}</div>
+          <div class="msg-time">${hm}</div>
+        </div>
+      </div>`;
+  }
+
+  function escHtml(t) {
+    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+             .replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\n/g,'<br>');
+  }
+
+  async function pollMessages() {
+    try {
+      const url = POLL_URL + (lastTs ? '?after=' + encodeURIComponent(lastTs) : '');
+      const resp = await fetch(url, { credentials: 'same-origin' });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (data.messages && data.messages.length) {
+        const container = document.getElementById('chatMessages');
+        data.messages.forEach(msg => {
+          if (!document.getElementById('msg-' + msg.id)) {
+            container.insertAdjacentHTML('beforeend', bubbleHtml(msg));
+          }
+          lastTs = msg.timestamp;
+        });
+        scrollBottom();
+        // Update live indicator briefly
+        const liveStatus = document.getElementById('liveStatus');
+        liveStatus.textContent = '✓ New message';
+        setTimeout(() => liveStatus.textContent = '', 2000);
+      }
+    } catch(e) { /* silently ignore network errors */ }
+  }
+
+  setInterval(pollMessages, 3000);
+
+  // ── Voice Recording ──
+  let mediaRecorder = null;
+  let audioChunks   = [];
+  let isRecording   = false;
+
+  const micBtn      = document.getElementById('micBtn');
+  const recIndicator= document.getElementById('recIndicator');
+  const uploadingMsg= document.getElementById('uploadingMsg');
+
+  micBtn.addEventListener('click', async () => {
+    if (!isRecording) {
+      // START recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks  = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.onstop = handleRecordingStop;
+        mediaRecorder.start();
+        isRecording = true;
+        micBtn.classList.add('recording');
+        micBtn.innerHTML = '<i class="bi bi-stop-fill"></i>';
+        micBtn.title = 'Stop recording';
+        recIndicator.classList.add('active');
+      } catch(err) {
+        alert('Microphone access denied. Please allow microphone access in your browser.');
+      }
+    } else {
+      // STOP recording
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      micBtn.innerHTML = '<i class="bi bi-mic-fill"></i>';
+      micBtn.title = 'Record voice message';
+      recIndicator.classList.remove('active');
+    }
+  });
+
+  async function handleRecordingStop() {
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    if (blob.size < 100) return; // ignore accidental clicks
+
+    uploadingMsg.classList.add('active');
+    const fd = new FormData();
+    fd.append('audio', blob, 'voice.webm');
+    fd.append('csrfmiddlewaretoken', CSRF_TOKEN);
+
+    try {
+      const resp = await fetch(VOICE_URL, {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        // Append the voice bubble immediately
+        const container = document.getElementById('chatMessages');
+        container.insertAdjacentHTML('beforeend', bubbleHtml({
+          id: data.id,
+          sender_id: ME_ID,
+          body: '',
+          voice_url: data.voice_url,
+          timestamp: data.timestamp,
+        }));
+        lastTs = data.timestamp;
+        scrollBottom();
+      } else {
+        alert('Voice upload failed, please try again.');
+      }
+    } catch(e) {
+      alert('Network error uploading voice message.');
+    } finally {
+      uploadingMsg.classList.remove('active');
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}My Profile – TinyTrack{% endblock %}
+{% block topbar_title %}My Profile{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-title">Teacher Profile</div>
+  <div class="page-header-sub">Manage your personal information and official details</div>
+</div>
+
+<div class="row g-4" style="max-width:900px;">
+
+  <!-- Left: Profile Summary -->
+  <div class="col-md-4">
+    <div class="tt-card">
+      <div class="tt-card-body" style="text-align:center;padding:28px 20px;">
+        {% if request.user.profile_picture %}
+          <img src="{{ request.user.profile_picture.url }}"
+            class="profile-avatar-lg"
+            style="width:90px;height:90px;object-fit:cover;border:3px solid #EEF2FF;"
+            alt="Profile">
+        {% else %}
+          <div class="profile-avatar-placeholder" style="width:90px;height:90px;font-size:32px;margin:0 auto 12px;">
+            {{ request.user.username|first|upper }}
+          </div>
+        {% endif %}
+        <div style="font-size:18px;font-weight:700;margin-top:12px;color:var(--text,#111827);">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </div>
+        <div style="margin-top:6px;">
+          <span class="tt-badge badge-primary">Teacher</span>
+        </div>
+
+        <hr class="tt-divider" style="margin:20px 0;">
+
+        <div style="display:flex;flex-direction:column;gap:12px;text-align:left;">
+          <div class="info-pill">
+            <i class="bi bi-person-badge"></i>
+            <div>
+              <span class="pill-label">Account ID</span>
+              <span class="pill-value">#{{ request.user.id }}</span>
+            </div>
+          </div>
+          <div class="info-pill">
+            <i class="bi bi-calendar-check"></i>
+            <div>
+              <span class="pill-label">Joined</span>
+              <span class="pill-value">{{ request.user.date_joined|date:"M Y" }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Edit Form -->
+  <div class="col-md-8">
+    <div class="tt-card">
+      <div class="tt-card-body" style="padding:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#EEF2FF;color:#4F46E5;display:flex;align-items:center;justify-content:center;font-size:16px;">
+              <i class="bi bi-gear-wide-connected"></i>
+            </div>
+            <h3 style="font-size:15px;font-weight:700;margin:0;">General Settings</h3>
+          </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger" style="font-size:13px;padding:10px 14px;border-radius:10px;margin-bottom:20px;">
+              {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="tt-form-group">
+                <label class="tt-label">First Name</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}<div class="tt-error">{{ form.first_name.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="tt-form-group">
+                <label class="tt-label">Last Name</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}<div class="tt-error">{{ form.last_name.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="tt-form-group">
+                <label class="tt-label">Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="tt-error">{{ form.username.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="tt-form-group">
+                <label class="tt-label">Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="tt-error">{{ form.email.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="tt-form-group">
+                <label class="tt-label">Profile Picture</label>
+                <div style="background:var(--input-bg,#F9FAFB);border:1.5px dashed var(--border,#E5E7EB);border-radius:12px;padding:12px;">
+                  {{ form.profile_picture }}
+                  <div style="font-size:11px;color:var(--text-muted,#6B7280);margin-top:6px;">
+                    Keep it professional. JPG, PNG or WebP only.
+                  </div>
+                </div>
+                {% if form.profile_picture.errors %}<div class="tt-error">{{ form.profile_picture.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border,#E5E7EB);display:flex;justify-content:flex-end;gap:12px;">
+            <a href="{% url 'teacher_dashboard' %}" class="tt-btn tt-btn-outline" style="min-width:100px;">Cancel</a>
+            <button type="submit" class="tt-btn tt-btn-primary" style="min-width:140px;">
+              <i class="bi bi-check-lg" style="margin-right:4px;"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

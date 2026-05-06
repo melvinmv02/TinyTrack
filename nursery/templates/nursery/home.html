@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TinyTrack – Real-Time Nursery Communication</title>
+  <link href="{% static 'nursery/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'nursery/css/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'nursery/css/style.css' %}" rel="stylesheet">
+</head>
+<body>
+
+<div class="home-page">
+
+  <!-- Top Bar -->
+  <div class="home-topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="logo-icon" style="width:32px;height:32px;border-radius:8px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;">T</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-primary);">TinyTrack</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="{% url 'register_teacher' %}" style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;text-decoration:none;margin-right:10px;">
+        Teacher? Join here
+      </a>
+      <a href="{% url 'login' %}" class="tt-btn tt-btn-primary">
+        <i class="bi bi-box-arrow-in-right"></i> Sign In
+      </a>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="home-hero">
+    <div style="max-width:580px;margin:0 auto;">
+      <div class="home-badge">
+        <i class="bi bi-stars"></i> Real-Time Nursery Communication
+      </div>
+      <h1 class="home-h1">
+        Keep parents close<br>to every <span>little moment</span>
+      </h1>
+      <p class="home-sub">
+        TinyTrack lets teachers share daily activities, attendance, and reports with parents — all in one beautiful, real-time platform.
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="{% url 'login' %}" class="tt-btn tt-btn-primary" style="padding:11px 28px;font-size:14px;">
+          <i class="bi bi-box-arrow-in-right"></i> Get Started
+        </a>
+      </div>
+
+      <!-- Feature chips -->
+      <div class="home-features">
+        <div class="feature-chip"><i class="bi bi-camera"></i> Activity Updates</div>
+        <div class="feature-chip"><i class="bi bi-calendar-check"></i> Attendance Tracking</div>
+        <div class="feature-chip"><i class="bi bi-journal-text"></i> Daily Reports</div>
+        <div class="feature-chip"><i class="bi bi-bell"></i> Notifications</div>
+        <div class="feature-chip"><i class="bi bi-people"></i> Class Management</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simple Footer -->
+  <div style="text-align:center;padding:20px;color:var(--text-light);font-size:12px;border-top:1px solid var(--border);">
+    © 2026 TinyTrack · Real-Time Nursery Communication System
+  </div>
+</div>
+
+<script src="{% static 'nursery/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

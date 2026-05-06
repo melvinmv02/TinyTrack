@@ -1,0 +1,60 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}Add Child – TinyTrack{% endblock %}
+{% block topbar_title %}Add New Child{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="tt-card">
+      <div class="tt-card-body">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text-primary);">Child Details</h2>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:24px;">Provide the information below to register another child to your account.</p>
+
+        <form method="POST" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="tt-alert tt-alert-error mb-3">
+            <i class="bi bi-exclamation-circle"></i> {{ form.non_field_errors|join:", " }}
+          </div>
+          {% endif %}
+
+          <div class="tt-form-group">
+            <label class="tt-label" for="{{ form.name.id_for_label }}">Full Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+              <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ form.name.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="tt-form-group">
+            <label class="tt-label" for="{{ form.age.id_for_label }}">Age</label>
+            {{ form.age }}
+            {% if form.age.errors %}
+              <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ form.age.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="tt-form-group">
+            <label class="tt-label" for="{{ form.student_class.id_for_label }}">Class</label>
+            {{ form.student_class }}
+            {% if form.student_class.errors %}
+              <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ form.student_class.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mt-4 pt-2" style="display:flex;gap:12px;">
+            <button type="submit" class="tt-btn tt-btn-primary" style="flex:1;">
+              <i class="bi bi-person-plus-fill"></i> Add Child
+            </button>
+            <a href="{% url 'parent_dashboard' %}" class="tt-btn tt-btn-outline" style="flex:1;text-align:center;">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

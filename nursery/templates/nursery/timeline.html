@@ -1,0 +1,365 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}Timeline – TinyTrack{% endblock %}
+{% block topbar_title %}Activity Timeline{% endblock %}
+
+{% block content %}
+
+<div class="page-header page-header-row">
+  <div>
+    <div class="page-header-title">Activity Timeline</div>
+    <div class="page-header-sub">
+      All updates for {% if student %}<strong>{{ student.name }}</strong>{% else %}your child{% endif %} — click a date to view that day
+    </div>
+  </div>
+  {% if children|length > 1 %}
+  <select class="tt-select" style="width:auto;max-width:180px;" onchange="location.href='?child='+this.value">
+    {% for child in children %}
+      <option value="{{ child.pk }}" {% if child == student %}selected{% endif %}>{{ child.name }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+</div>
+
+<!-- ══════════════════════════════════════
+     CALENDAR + FEED — two-column layout
+     ══════════════════════════════════════ -->
+<div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+
+  <!-- ── CALENDAR PANEL ── -->
+  <div style="
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px;
+    min-width:260px;
+    flex-shrink:0;
+    position:sticky;
+    top:80px;
+  ">
+
+    <!-- Month navigation -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <a href="?{% if child_id %}child={{ child_id }}&{% endif %}{% if selected_date_iso %}date={{ selected_date_iso }}&{% endif %}cal={{ cal_year }}-{% if cal_month == 1 %}12{% else %}{% if cal_month < 11 %}0{% endif %}{{ cal_month|add:"-1" }}{% endif %}"
+         id="cal-prev"
+         style="
+           display:flex;align-items:center;justify-content:center;
+           width:30px;height:30px;border-radius:50%;
+           background:var(--bg);border:1px solid var(--border);
+           color:var(--text-muted);text-decoration:none;font-size:14px;
+           transition:background 0.15s;
+         "
+         title="Previous month"
+         onmouseover="this.style.background='var(--border)'"
+         onmouseout="this.style.background='var(--bg)'">‹</a>
+
+      <div style="font-size:14px;font-weight:700;color:var(--text-primary);">{{ cal_month_name }}</div>
+
+      <a href="?{% if child_id %}child={{ child_id }}&{% endif %}{% if selected_date_iso %}date={{ selected_date_iso }}&{% endif %}cal={{ cal_year }}-{% if cal_month == 12 %}01{% else %}{% if cal_month < 9 %}0{% endif %}{{ cal_month|add:"1" }}{% endif %}"
+         id="cal-next"
+         style="
+           display:flex;align-items:center;justify-content:center;
+           width:30px;height:30px;border-radius:50%;
+           background:var(--bg);border:1px solid var(--border);
+           color:var(--text-muted);text-decoration:none;font-size:14px;
+           transition:background 0.15s;
+         "
+         title="Next month"
+         onmouseover="this.style.background='var(--border)'"
+         onmouseout="this.style.background='var(--bg)'">›</a>
+    </div>
+
+    <!-- Day-of-week headers -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
+      {% for day in "SMTWTFS" %}
+      <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text-light);padding:2px 0;">{{ day }}</div>
+      {% endfor %}
+    </div>
+
+    <!-- Calendar grid -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;" id="cal-grid">
+      {% for week in cal_weeks %}
+        {% for day in week %}
+          {% if day == 0 %}
+            <div></div>
+          {% else %}
+            <button
+              class="cal-day"
+              data-date="{{ cal_year }}-{% if cal_month < 10 %}0{% endif %}{{ cal_month }}-{% if day < 10 %}0{% endif %}{{ day }}"
+              style="
+                width:100%;aspect-ratio:1;border:none;border-radius:6px;
+                font-size:12px;font-weight:600;cursor:pointer;
+                background:var(--bg);color:var(--text-muted);
+                transition:background 0.15s,color 0.15s,transform 0.1s;
+                position:relative;
+              "
+            >{{ day }}</button>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    <!-- Legend -->
+    <div style="margin-top:14px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text-muted);">
+      <span style="display:flex;align-items:center;gap:4px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:#4F46E5;display:inline-block;"></span> Has updates
+      </span>
+      <span style="display:flex;align-items:center;gap:4px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:#4F46E5;border:2px solid #4F46E5;display:inline-block;box-sizing:border-box;"></span> Selected
+      </span>
+    </div>
+  </div><!-- /calendar panel -->
+
+  <!-- ── FEED PANEL ── -->
+  <div style="flex:1;min-width:0;">
+
+    <!-- Selected date heading -->
+    {% if selected_date %}
+    <div style="display:flex;align-items:center;gap:12px;margin:0 0 18px;">
+      <div style="
+        display:inline-flex;align-items:center;gap:7px;
+        background:var(--text-primary);color:#fff;
+        padding:5px 16px;border-radius:99px;
+        font-size:13px;font-weight:700;flex-shrink:0;
+      ">
+        <i class="bi bi-calendar3" style="font-size:11px;"></i>
+        {{ selected_date|date:"F j, Y" }}
+      </div>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+    {% endif %}
+
+    {% if timeline_by_day %}
+
+      {% for date_label, hours in timeline_by_day %}
+        {% for hour, items in hours %}
+
+        <!-- ── Hour Header ── -->
+        <div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px 4px;">
+          <div style="
+            display:inline-flex;align-items:center;gap:6px;
+            background:#EEF2FF;color:#4F46E5;
+            padding:3px 11px;border-radius:99px;
+            font-size:11.5px;font-weight:700;flex-shrink:0;
+          ">
+            <i class="bi bi-clock" style="font-size:10px;"></i> {{ hour }}
+          </div>
+          <div style="flex:1;height:1px;background:var(--border);opacity:0.5;"></div>
+          <span style="font-size:11px;color:var(--text-light);flex-shrink:0;">
+            {{ items|length }} update{{ items|length|pluralize }}
+          </span>
+        </div>
+
+        <!-- ── Items in this hour ── -->
+        <div class="timeline-wrap" style="margin-left:8px;">
+          {% for item in items %}
+
+          <div class="position-relative" style="margin-bottom:12px;">
+            <!-- Timeline dot -->
+            <div class="timeline-dot"
+              style="background:{% if item.type == 'activity' %}#4F46E5{% else %}#F59E0B{% endif %};">
+            </div>
+
+            <!-- Activity card -->
+            {% if item.type == 'activity' %}
+            <div class="feed-item">
+              <div class="feed-item-header">
+                <div class="user-avatar" style="background:linear-gradient(135deg,#4F46E5,#818CF8);">
+                  <i class="bi bi-camera-fill" style="font-size:13px;"></i>
+                </div>
+                <div style="flex:1;">
+                  <div class="feed-name">Activity Update</div>
+                  <div class="feed-meta">
+                    <i class="bi bi-clock" style="font-size:10px;"></i> {{ item.obj.timestamp|date:"g:i A" }}
+                    &nbsp;·&nbsp;
+                    <i class="bi bi-person" style="font-size:10px;"></i>
+                    {% if item.obj.teacher %}
+                      {{ item.obj.teacher.get_full_name|default:item.obj.teacher.username }}
+                    {% else %}
+                      System Update
+                    {% endif %}
+                  </div>
+                </div>
+                <span class="tt-badge badge-primary" style="font-size:11px;">
+                  <i class="bi bi-camera" style="font-size:10px;"></i> Activity
+                </span>
+              </div>
+              <div class="feed-item-body">
+                <p class="feed-text">{{ item.obj.description }}</p>
+                {% if item.obj.image %}
+                  <img src="{{ item.obj.image.url }}" alt="Activity image" class="feed-item-img">
+                {% endif %}
+                {% if item.obj.file %}
+                  <div style="margin-top:10px;">
+                    <a href="{{ item.obj.file.url }}" class="tt-btn tt-btn-outline tt-btn-sm" target="_blank">
+                      <i class="bi bi-file-earmark-text"></i> View Attachment / Assignment
+                    </a>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Report card -->
+            {% elif item.type == 'report' %}
+            <div class="feed-item">
+              <div class="feed-item-header">
+                <div class="user-avatar" style="background:linear-gradient(135deg,#F59E0B,#FCD34D);color:#78350F;">
+                  <i class="bi bi-journal-text" style="font-size:13px;"></i>
+                </div>
+                <div style="flex:1;">
+                  <div class="feed-name">Daily Report</div>
+                  <div class="feed-meta">
+                    <i class="bi bi-calendar3" style="font-size:10px;"></i> {{ item.obj.date|date:"M d, Y" }}
+                    &nbsp;·&nbsp;
+                    <i class="bi bi-person" style="font-size:10px;"></i> {{ item.obj.teacher.get_full_name|default:item.obj.teacher.username }}
+                  </div>
+                </div>
+                <span class="tt-badge badge-gray" style="font-size:11px;">
+                  <i class="bi bi-journal" style="font-size:10px;"></i> Report
+                </span>
+              </div>
+              <div class="feed-item-body">
+                <div class="report-mini-grid">
+                  {% if item.obj.mood %}
+                  <div class="report-mini-cell">
+                    <div class="report-mini-emoji">{% if item.obj.mood == 'Happy' %}😊{% elif item.obj.mood == 'Neutral' %}😐{% else %}😢{% endif %}</div>
+                    <div class="report-mini-label">Mood</div>
+                    <div class="report-mini-val">{{ item.obj.mood }}</div>
+                  </div>
+                  {% endif %}
+
+                  {% if item.obj.food %}
+                  <div class="report-mini-cell">
+                    <div class="report-mini-emoji">{% if item.obj.food == 'Ate Well' %}🍽️{% elif item.obj.food == 'Ate Little' %}🥄{% else %}❌{% endif %}</div>
+                    <div class="report-mini-label">Food</div>
+                    <div class="report-mini-val">{{ item.obj.food }}</div>
+                  </div>
+                  {% endif %}
+
+                  {% if item.obj.sleep %}
+                  <div class="report-mini-cell">
+                    <div class="report-mini-emoji">{% if item.obj.sleep == 'Slept Well' %}😴{% elif item.obj.sleep == 'Short Nap' %}💤{% else %}⚡{% endif %}</div>
+                    <div class="report-mini-label">Sleep</div>
+                    <div class="report-mini-val">{{ item.obj.sleep }}</div>
+                  </div>
+                  {% endif %}
+                </div>
+                {% if item.obj.activity_notes %}
+                <div style="background:var(--bg);border:1px solid var(--border);border-left:3px solid #F59E0B;border-radius:var(--radius-sm);padding:10px 12px;margin-top:4px;font-size:13px;color:var(--text-muted);">
+                  <i class="bi bi-chat-quote" style="margin-right:5px;color:var(--text-light);"></i>{{ item.obj.activity_notes }}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+          </div>
+          {% endfor %}
+        </div><!-- /timeline-wrap -->
+
+        {% endfor %}<!-- /hours -->
+      {% endfor %}<!-- /days -->
+
+    {% else %}
+    <div class="tt-card">
+      <div class="tt-empty" style="padding:64px 24px;">
+        <div class="tt-empty-icon" style="font-size:40px;">📭</div>
+        <div class="tt-empty-title">No updates for this day</div>
+        <div class="tt-empty-sub">Select another date from the calendar, or check back when the teacher posts something!</div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /feed panel -->
+</div><!-- /two-column -->
+
+<!-- ═══════════════════════════════════════════════════
+     JavaScript — highlight calendar days & navigation
+     ═══════════════════════════════════════════════════ -->
+<script>
+(function () {
+  // Dates that have entries (passed from Django view)
+  const activeDates = new Set({{ available_dates_iso|safe }});
+  const selectedDate = "{{ selected_date_iso }}";
+  const childId = "{{ child_id }}";
+
+  // Read ?cal= from URL for month navigation (already handled by server
+  // for prev/next links, but we still need JS for day-click navigation)
+
+  document.querySelectorAll('.cal-day').forEach(function (btn) {
+    const d = btn.getAttribute('data-date');
+
+    // Mark days that have entries
+    if (activeDates.has(d)) {
+      // Put a small dot under the day number
+      btn.style.color = 'var(--text-primary)';
+      const dot = document.createElement('span');
+      dot.style.cssText = `
+        position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+        width:5px;height:5px;border-radius:50%;
+        background:#4F46E5;display:block;
+      `;
+      btn.style.position = 'relative';
+      btn.appendChild(dot);
+    }
+
+    // Highlight selected day
+    if (d === selectedDate) {
+      btn.style.background = '#4F46E5';
+      btn.style.color = '#fff';
+    }
+
+    // Hover effect (only for non-selected)
+    btn.addEventListener('mouseenter', function () {
+      if (d !== selectedDate) {
+        btn.style.background = '#EEF2FF';
+        btn.style.color = '#4F46E5';
+        btn.style.transform = 'scale(1.08)';
+      }
+    });
+    btn.addEventListener('mouseleave', function () {
+      if (d !== selectedDate) {
+        btn.style.background = activeDates.has(d) ? 'var(--bg)' : 'var(--bg)';
+        btn.style.color = activeDates.has(d) ? 'var(--text-primary)' : 'var(--text-muted)';
+        btn.style.transform = '';
+      }
+    });
+
+    // Click → navigate to that date
+    btn.addEventListener('click', function () {
+      let url = '?date=' + d;
+      if (childId) url += '&child=' + childId;
+      window.location.href = url;
+    });
+  });
+
+  // Fix Prev/Next month links — they use Django template |add filter which
+  // doesn't zero-pad well. We rebuild them cleanly in JS.
+  (function fixMonthLinks() {
+    const calYear  = parseInt("{{ cal_year }}", 10);
+    const calMonth = parseInt("{{ cal_month }}", 10);
+
+    function buildMonthUrl(year, month) {
+      const mm = String(month).padStart(2, '0');
+      let url = '?cal=' + year + '-' + mm;
+      if (selectedDate) url += '&date=' + selectedDate;
+      if (childId) url += '&child=' + childId;
+      return url;
+    }
+
+    let prevYear = calYear, prevMonth = calMonth - 1;
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+
+    let nextYear = calYear, nextMonth = calMonth + 1;
+    if (nextMonth > 12) { nextMonth = 1; nextYear++; }
+
+    const prevEl = document.getElementById('cal-prev');
+    const nextEl = document.getElementById('cal-next');
+    if (prevEl) prevEl.href = buildMonthUrl(prevYear, prevMonth);
+    if (nextEl) nextEl.href = buildMonthUrl(nextYear, nextMonth);
+  })();
+})();
+</script>
+
+{% endblock %}

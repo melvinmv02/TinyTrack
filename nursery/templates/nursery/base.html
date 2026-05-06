@@ -1,0 +1,192 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}TinyTrack{% endblock %}</title>
+  <meta name="description" content="TinyTrack – Real-Time Nursery Activity Communication System">
+
+  <!-- Bootstrap CSS -->
+  <link href="{% static 'nursery/css/bootstrap.min.css' %}" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="{% static 'nursery/css/bootstrap-icons.css' %}" rel="stylesheet">
+  <!-- TinyTrack Custom Design System -->
+  <link href="{% static 'nursery/css/style.css' %}" rel="stylesheet">
+
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% block shell %}
+{# ═══════ DEFAULT: APP SHELL (sidebar + topbar + main) ═══════ #}
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="tt-sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside class="tt-sidebar" id="sidebar">
+  <!-- Logo -->
+  <div class="tt-sidebar-logo">
+    <div class="logo-icon">T</div>
+    <div>
+      <div class="logo-text">TinyTrack</div>
+      <div class="logo-sub">Nursery System</div>
+    </div>
+  </div>
+
+  <!-- Nav Links -->
+  <nav class="tt-sidebar-section">
+
+    {% if user.is_authenticated %}
+
+      {% if user.role == "teacher" %}
+        <div class="tt-sidebar-label">Main</div>
+        <a href="{% url 'teacher_dashboard' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}">
+          <i class="bi bi-grid-1x2"></i> Dashboard
+        </a>
+        <a href="{% url 'teacher_dashboard' %}?tab=activities" class="tt-nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' and request.GET.tab == 'activities' %}active{% endif %}">
+          <i class="bi bi-camera"></i> Activities
+        </a>
+        <a href="{% url 'mark_attendance' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'mark_attendance' %}active{% endif %}">
+          <i class="bi bi-calendar-check"></i> Attendance
+        </a>
+        {% if user.managed_class.class_type == 'nursery' %}
+        <a href="{% url 'daily_report' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'daily_report' %}active{% endif %}">
+          <i class="bi bi-journal-text"></i> Daily Reports
+        </a>
+        {% endif %}
+
+        <div class="tt-sidebar-label">Students</div>
+        <a href="{% url 'my_students' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'my_students' %}active{% endif %}">
+          <i class="bi bi-people"></i> My Students
+        </a>
+
+        <div class="tt-sidebar-label">Account</div>
+        <a href="{% url 'teacher_profile' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'teacher_profile' %}active{% endif %}">
+          <i class="bi bi-person"></i> Profile
+        </a>
+        <a href="{% url 'chat_inbox' %}" class="tt-nav-link {% if 'chat' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="bi bi-chat-dots"></i> Messages
+          {% if unread_chat_count %}
+            <span class="notif-dot">{{ unread_chat_count }}</span>
+          {% endif %}
+        </a>
+
+      {% elif user.role == "parent" %}
+        <div class="tt-sidebar-label">Main</div>
+        <a href="{% url 'parent_dashboard' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'parent_dashboard' %}active{% endif %}">
+          <i class="bi bi-grid-1x2"></i> Dashboard
+        </a>
+        <a href="{% url 'timeline' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'timeline' %}active{% endif %}">
+          <i class="bi bi-layers"></i> Timeline
+        </a>
+        <a href="{% url 'attendance_history' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'attendance_history' %}active{% endif %}">
+          <i class="bi bi-calendar3"></i> Attendance
+        </a>
+        <a href="{% url 'chat_inbox' %}" class="tt-nav-link {% if 'chat' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="bi bi-chat-dots"></i> Messages
+          {% if unread_chat_count %}
+            <span class="notif-dot">{{ unread_chat_count }}</span>
+          {% endif %}
+        </a>
+
+        <div class="tt-sidebar-label">Child</div>
+        <a href="{% url 'student_profile' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'student_profile' %}active{% endif %}">
+          <i class="bi bi-person-badge"></i> Child Profile
+        </a>
+        <a href="{% url 'notifications' %}" class="tt-nav-link {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+          <i class="bi bi-bell"></i> Notifications
+          {% if unread_notif_count %}
+            <span class="notif-dot">{{ unread_notif_count }}</span>
+          {% endif %}
+        </a>
+      {% endif %}
+
+    {% endif %}
+
+  </nav>
+
+  <!-- Footer / User info -->
+  <div class="tt-sidebar-footer">
+    {% if user.is_authenticated %}
+    <div class="tt-sidebar-user">
+      {% if user.profile_picture %}
+        <img src="{{ user.profile_picture.url }}" class="tt-avatar-img" alt="">
+      {% else %}
+        <div class="tt-avatar">{{ user.username|first|upper }}</div>
+      {% endif %}
+      <div class="tt-avatar-info">
+        <div class="tt-avatar-name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="tt-avatar-role">{{ user.role|capfirst }}</div>
+      </div>
+    </div>
+    <a href="{% url 'logout' %}" class="tt-nav-link mt-1" style="color:#EF4444;">
+      <i class="bi bi-box-arrow-left"></i> Logout
+    </a>
+    {% endif %}
+  </div>
+</aside>
+
+<!-- ── TOPBAR ── -->
+<header class="tt-topbar">
+  <button class="tt-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+    <i class="bi bi-list"></i>
+  </button>
+  <div class="tt-topbar-title">{% block topbar_title %}{% endblock %}</div>
+  <div class="tt-topbar-actions">
+    {% if user.is_authenticated and user.role == 'parent' and unread_notif_count %}
+    <a href="{% url 'notifications' %}" class="tt-topbar-btn" style="color:#EF4444;border-color:#FECACA;background:#FEF2F2;">
+      <i class="bi bi-bell-fill"></i> {{ unread_notif_count }}
+    </a>
+    {% endif %}
+    <span class="tt-topbar-btn" style="cursor:default;color:var(--text-muted);">
+      {% if user.profile_picture %}
+        <img src="{{ user.profile_picture.url }}" class="tt-avatar-img" style="width:22px;height:22px;" alt="">
+      {% else %}
+        <div class="tt-avatar" style="width:22px;height:22px;font-size:10px;">{{ user.username|first|upper }}</div>
+      {% endif %}
+      {{ user.get_full_name|default:user.username }}
+    </span>
+    <a href="{% url 'logout' %}" class="tt-topbar-btn danger">
+      <i class="bi bi-box-arrow-right"></i> Logout
+    </a>
+  </div>
+</header>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="tt-main">
+  <div class="tt-page">
+
+    <!-- Flash Messages -->
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="tt-alert tt-alert-{% if msg.tags == 'error' %}error{% elif msg.tags == 'success' %}success{% elif msg.tags == 'warning' %}warning{% else %}info{% endif %} mb-3">
+          <i class="bi bi-{% if msg.tags == 'success' %}check-circle{% elif msg.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+          {{ msg }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+{% endblock shell %}
+
+<!-- Bootstrap JS -->
+<script src="{% static 'nursery/js/bootstrap.bundle.min.js' %}"></script>
+<script>
+  // Mobile sidebar toggle
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+  }
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

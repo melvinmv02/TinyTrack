@@ -1,0 +1,350 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}Attendance – TinyTrack{% endblock %}
+{% block topbar_title %}Mark Attendance{% endblock %}
+
+{% block extra_css %}
+<style>
+  .att-date-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #E5E7EB);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  }
+  .att-date-bar label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted, #6B7280);
+    white-space: nowrap;
+  }
+  .att-date-input {
+    border: 1px solid var(--border, #E5E7EB);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text, #111827);
+    background: var(--input-bg, #F9FAFB);
+    outline: none;
+    transition: border .2s;
+  }
+  .att-date-input:focus { border-color: #4F46E5; }
+
+  /* Student list box */
+  .student-att-box {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #E5E7EB);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  }
+  .student-att-box .box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border, #E5E7EB);
+    background: var(--sidebar-bg, #F9FAFB);
+  }
+  .box-header h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .student-att-list { padding: 8px 0; max-height: 480px; overflow-y: auto; }
+  .student-att-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border, #E5E7EB);
+    transition: background .15s;
+    cursor: pointer;
+  }
+  .student-att-row:last-child { border-bottom: none; }
+  .student-att-row:hover { background: var(--hover-bg, #F3F4F6); }
+
+  /* Custom checkbox toggle */
+  .att-check-wrap { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+  .att-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .att-toggle input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 36px;
+    height: 20px;
+    border-radius: 20px;
+    background: #E5E7EB;
+    border: 2px solid #D1D5DB;
+    cursor: pointer;
+    position: relative;
+    transition: background .25s, border-color .25s;
+    flex-shrink: 0;
+  }
+  .att-toggle input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #9CA3AF;
+    transition: transform .25s, background .25s;
+  }
+  .att-toggle input[type="checkbox"]:checked {
+    background: #D1FAE5;
+    border-color: #10B981;
+  }
+  .att-toggle input[type="checkbox"]:checked::after {
+    transform: translateX(16px);
+    background: #059669;
+  }
+  .toggle-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #9CA3AF;
+    min-width: 48px;
+    text-align: left;
+    transition: color .2s;
+  }
+  .att-toggle input:checked ~ .toggle-label { color: #059669; }
+
+  .student-name-grp {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .student-initial {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4F46E5, #818CF8);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .student-info-name { font-size: 14px; font-weight: 600; }
+  .student-info-class { font-size: 11px; color: var(--text-muted, #6B7280); }
+
+  /* Submit bar */
+  .att-submit-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .att-count-chip {
+    font-size: 13px;
+    color: var(--text-muted, #6B7280);
+  }
+  .att-count-chip strong { color: #059669; }
+  .att-count-chip .absent-c { color: #DC2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header page-header-row">
+  <div>
+    <div class="page-header-title">Attendance</div>
+    <div class="page-header-sub">Mark attendance for all students at once</div>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- LEFT: Bulk Attendance Form -->
+  <div class="col-lg-5">
+    <form method="POST" id="attForm">
+      {% csrf_token %}
+
+      <!-- Date picker bar -->
+      <div class="att-date-bar">
+        <i class="bi bi-calendar3" style="color:#4F46E5;font-size:16px;"></i>
+        <label for="attendance_date">Date</label>
+        <input type="date" id="attendance_date" name="attendance_date"
+               class="att-date-input"
+               value="{{ today|date:'Y-m-d' }}"
+               max="{{ today|date:'Y-m-d' }}"
+               required>
+      </div>
+
+      <!-- Students box -->
+      {% if students %}
+      <div class="student-att-box">
+        <div class="box-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:26px;height:26px;border-radius:7px;background:#D1FAE5;color:#059669;display:flex;align-items:center;justify-content:center;font-size:12px;">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <h3>Students ({{ students|length }})</h3>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="tt-btn" style="padding:5px 12px;font-size:12px;" onclick="markAll(true)">
+              <i class="bi bi-check-all"></i> All Present
+            </button>
+            <button type="button" class="tt-btn" style="padding:5px 12px;font-size:12px;background:#FEF2F2;color:#DC2626;border-color:#FECACA;" onclick="markAll(false)">
+              <i class="bi bi-x-lg"></i> All Absent
+            </button>
+          </div>
+        </div>
+
+        <div class="student-att-list" id="studentList">
+          {% for student in students %}
+          <label class="student-att-row" for="chk_{{ student.pk }}">
+            <div class="student-name-grp">
+              <div class="student-initial">{{ student.name|first|upper }}</div>
+              <div>
+                <div class="student-info-name">{{ student.name }}</div>
+                <div class="student-info-class">{{ student.student_class.name }}</div>
+              </div>
+            </div>
+            <label class="att-toggle">
+              <input type="checkbox"
+                     id="chk_{{ student.pk }}"
+                     name="present_{{ student.pk }}"
+                     checked
+                     onchange="updateCount()">
+              <span class="toggle-label" data-checked="Present" data-unchecked="Absent">Present</span>
+            </label>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Submit bar -->
+      <div class="att-submit-bar">
+        <div class="att-count-chip">
+          <strong id="presentCount">{{ students|length }}</strong> Present ·
+          <span class="absent-c" id="absentCount">0</span> Absent
+        </div>
+        <button type="submit" class="tt-btn tt-btn-success" style="padding:10px 24px;">
+          <i class="bi bi-check-lg"></i> Save Attendance
+        </button>
+      </div>
+
+      {% else %}
+      <div class="tt-empty" style="padding:40px;">
+        <div class="tt-empty-icon"><i class="bi bi-people"></i></div>
+        <div class="tt-empty-title">No students assigned</div>
+        <div class="tt-empty-desc">Ask the admin to assign students to your class.</div>
+      </div>
+      {% endif %}
+
+    </form>
+  </div>
+
+  <!-- RIGHT: Recent Records -->
+  <div class="col-lg-7">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <div style="width:26px;height:26px;border-radius:7px;background:#EEF2FF;color:#4F46E5;display:flex;align-items:center;justify-content:center;font-size:12px;">
+        <i class="bi bi-clock-history"></i>
+      </div>
+      <h3 style="font-size:14px;font-weight:700;margin:0;">Recent Records</h3>
+    </div>
+    <div class="tt-card" style="overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table class="tt-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Date</th>
+              <th>Day</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in attendance_records %}
+            <tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="user-avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(135deg,#4F46E5,#818CF8);">
+                    {{ record.student.name|first|upper }}
+                  </div>
+                  <span style="font-weight:600;">{{ record.student.name }}</span>
+                </div>
+              </td>
+              <td style="color:var(--text-muted);">{{ record.date|date:"M d, Y" }}</td>
+              <td style="color:var(--text-light);font-size:12px;">{{ record.date|date:"l" }}</td>
+              <td>
+                {% if record.status == 'Present' %}
+                  <span class="tt-badge badge-present"><i class="bi bi-check-circle-fill" style="font-size:10px;"></i> Present</span>
+                {% else %}
+                  <span class="tt-badge badge-absent"><i class="bi bi-x-circle-fill" style="font-size:10px;"></i> Absent</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4">
+                <div class="tt-empty">
+                  <div class="tt-empty-icon"><i class="bi bi-calendar-x"></i></div>
+                  <div class="tt-empty-title">No records yet</div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const totalStudents = {{ students|length }};
+
+  function updateCount() {
+    const checked = document.querySelectorAll('#studentList input[type="checkbox"]:checked').length;
+    document.getElementById('presentCount').textContent = checked;
+    document.getElementById('absentCount').textContent = totalStudents - checked;
+
+    // Update toggle labels
+    document.querySelectorAll('#studentList input[type="checkbox"]').forEach(cb => {
+      const lbl = cb.nextElementSibling;
+      if (lbl) lbl.textContent = cb.checked ? 'Present' : 'Absent';
+    });
+  }
+
+  function markAll(present) {
+    document.querySelectorAll('#studentList input[type="checkbox"]').forEach(cb => {
+      cb.checked = present;
+    });
+    updateCount();
+  }
+
+  // Highlight row on check state
+  document.querySelectorAll('#studentList input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      updateCount();
+    });
+  });
+
+  // Init count on load
+  updateCount();
+</script>
+{% endblock %}

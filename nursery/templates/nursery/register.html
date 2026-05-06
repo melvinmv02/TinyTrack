@@ -1,0 +1,356 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Parent Account – TinyTrack</title>
+  <link href="{% static 'nursery/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'nursery/css/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'nursery/css/style.css' %}" rel="stylesheet">
+  <style>
+    /* Child card section */
+    .child-section {
+      margin-top: 24px;
+      border-top: 1px solid var(--border, #E5E7EB);
+      padding-top: 20px;
+    }
+    .child-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text, #111827);
+      margin-bottom: 14px;
+    }
+    .child-section-title .title-icon {
+      width: 26px; height: 26px;
+      border-radius: 7px;
+      background: #D1FAE5;
+      color: #059669;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+    /* Individual child card */
+    .child-card {
+      background: var(--sidebar-bg, #F9FAFB);
+      border: 1px solid var(--border, #E5E7EB);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .child-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .child-card-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #4F46E5;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .remove-child-btn {
+      border: none;
+      background: #FEF2F2;
+      color: #DC2626;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background .15s;
+    }
+    .remove-child-btn:hover { background: #FECACA; }
+    /* Add child button */
+    .add-child-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #EEF2FF;
+      color: #4F46E5;
+      border: 1.5px dashed #A5B4FC;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      justify-content: center;
+      transition: background .15s, border-color .15s;
+      margin-top: 4px;
+    }
+    .add-child-btn:hover { background: #E0E7FF; border-color: #818CF8; }
+    /* Error list */
+    .child-errors {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .child-errors li { font-size: 12px; color: #DC2626; }
+  </style>
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card" style="max-width:520px;">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="logo-icon">T</div>
+      <div class="logo-text">TinyTrack</div>
+    </div>
+
+    <h1 class="auth-title">Create parent account</h1>
+    <p class="auth-sub">Stay connected with your child's nursery day</p>
+
+    <!-- Non-field errors -->
+    {% if form.non_field_errors %}
+    <div class="tt-alert tt-alert-error" style="margin-bottom:16px;">
+      <i class="bi bi-exclamation-circle"></i> {{ form.non_field_errors|join:", " }}
+    </div>
+    {% endif %}
+
+    <!-- Child validation errors -->
+    {% if child_errors %}
+    <div class="child-errors">
+      <div style="font-size:12px;font-weight:700;color:#DC2626;margin-bottom:6px;">
+        <i class="bi bi-exclamation-triangle-fill"></i> Please fix the following:
+      </div>
+      <ul style="margin:0;padding-left:16px;">
+        {% for err in child_errors %}<li>{{ err }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <form method="POST" novalidate id="registerForm">
+      {% csrf_token %}
+
+      <!-- ── PARENT ACCOUNT DETAILS ── -->
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted,#6B7280);letter-spacing:.05em;text-transform:uppercase;margin-bottom:12px;">
+        Account Details
+      </div>
+
+      <!-- Name row -->
+      <div class="row g-2 mb-1">
+        <div class="col-6">
+          <div class="tt-form-group">
+            <label class="tt-label" for="id_first_name">First Name</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}
+              <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.first_name.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="tt-form-group">
+            <label class="tt-label" for="id_last_name">Last Name</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}
+              <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.last_name.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Username -->
+      <div class="tt-form-group">
+        <label class="tt-label" for="id_username">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+          <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.username.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Email -->
+      <div class="tt-form-group">
+        <label class="tt-label" for="id_email">Email <span style="color:var(--text-light);font-weight:400;">(optional)</span></label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.email.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Password -->
+      <div class="tt-form-group">
+        <label class="tt-label" for="id_password">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}
+          <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.password.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="tt-form-group">
+        <label class="tt-label" for="id_confirm_password">Confirm Password</label>
+        {{ form.confirm_password }}
+        {% if form.confirm_password.errors %}
+          <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.confirm_password.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- ── CHILDREN SECTION ── -->
+      <div class="child-section">
+        <div class="child-section-title">
+          <span class="title-icon"><i class="bi bi-people-fill"></i></span>
+          Register Your Child(ren)
+          <span style="font-weight:400;color:var(--text-muted,#9CA3AF);font-size:11px;">(optional)</span>
+        </div>
+
+        <!-- Children container: JS will add/remove cards here -->
+        <div id="childrenContainer"></div>
+
+        <!-- Add child button -->
+        <button type="button" class="add-child-btn" id="addChildBtn" onclick="addChild()">
+          <i class="bi bi-plus-circle"></i> Add a child
+        </button>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button type="submit" class="tt-btn tt-btn-primary tt-btn-full" style="padding:10px;font-size:14px;">
+          <i class="bi bi-person-check"></i> Create Account
+        </button>
+      </div>
+    </form>
+
+    <!-- Sign in link -->
+    <div style="text-align:center;margin-top:20px;font-size:13px;color:var(--text-muted);">
+      Already have an account?
+      <a href="{% url 'login' %}" style="color:#4F46E5;font-weight:600;">Sign in</a>
+    </div>
+
+    <!-- Back link -->
+    <div style="text-align:center;margin-top:10px;">
+      <a href="{% url 'home' %}" style="font-size:13px;color:var(--text-muted);">
+        <i class="bi bi-arrow-left" style="font-size:11px;"></i> Back to home
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script src="{% static 'nursery/js/bootstrap.bundle.min.js' %}"></script>
+<script>
+  const CLASSES = [
+    {% for cls in classes %}{ id: {{ cls.pk }}, name: "{{ cls.name|escapejs }}" },{% endfor %}
+  ];
+
+  let childCount = 0;
+
+  function buildClassOptions(selectedId) {
+    if (CLASSES.length === 0) return '<option value="">No classes available</option>';
+    let opts = '<option value="">— Select class —</option>';
+    CLASSES.forEach(c => {
+      const sel = (selectedId && String(c.id) === String(selectedId)) ? ' selected' : '';
+      opts += `<option value="${c.id}"${sel}>${escAttr(c.name)}</option>`;
+    });
+    return opts;
+  }
+
+  function escAttr(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+
+  function addChild(prefillName, prefillAge, prefillCls) {
+    childCount++;
+    const n = childCount;
+    const removePart = n > 1
+      ? `<button type="button" class="remove-child-btn" onclick="removeChild(${n})"><i class="bi bi-trash3"></i> Remove</button>`
+      : '';
+    const html = `
+      <div class="child-card" id="childCard_${n}">
+        <div class="child-card-header">
+          <span class="child-card-label"><i class="bi bi-person-hearts"></i> Child ${n}</span>
+          ${removePart}
+        </div>
+        <div class="tt-form-group">
+          <label class="tt-label" for="child_name_${n}">Child's Full Name</label>
+          <input type="text" id="child_name_${n}" name="child_name_${n}"
+                 class="tt-input" placeholder="e.g. Emma Johnson"
+                 value="${escAttr(prefillName || '')}">
+        </div>
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="tt-form-group">
+              <label class="tt-label" for="child_age_${n}">Age (years)</label>
+              <input type="number" id="child_age_${n}" name="child_age_${n}"
+                     class="tt-input" placeholder="e.g. 3" min="0" max="18"
+                     value="${escAttr(prefillAge || '')}">
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="tt-form-group">
+              <label class="tt-label" for="child_class_${n}">Class</label>
+              <select id="child_class_${n}" name="child_class_${n}" class="tt-select">
+                ${buildClassOptions(prefillCls)}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('childrenContainer').insertAdjacentHTML('beforeend', html);
+    updateAddBtn();
+  }
+
+  function removeChild(n) {
+    const card = document.getElementById('childCard_' + n);
+    if (card) card.remove();
+    renumberCards();
+    updateAddBtn();
+  }
+
+  function renumberCards() {
+    childCount = 0;
+    document.querySelectorAll('#childrenContainer .child-card').forEach((card, idx) => {
+      const newN = idx + 1;
+      childCount = newN;
+      card.id = 'childCard_' + newN;
+      card.querySelector('.child-card-label').innerHTML = `<i class="bi bi-person-hearts"></i> Child ${newN}`;
+      // Remove button
+      const existing = card.querySelector('.remove-child-btn');
+      if (existing) existing.remove();
+      if (newN > 1) {
+        card.querySelector('.child-card-header').insertAdjacentHTML('beforeend',
+          `<button type="button" class="remove-child-btn" onclick="removeChild(${newN})"><i class="bi bi-trash3"></i> Remove</button>`);
+      }
+      // Rename fields
+      ['name','age','class'].forEach(f => {
+        const el  = card.querySelector(`[id^="child_${f}_"]`);
+        const lbl = card.querySelector(`label[for^="child_${f}_"]`);
+        if (el)  { el.id  = `child_${f}_${newN}`; el.name = `child_${f}_${newN}`; }
+        if (lbl) lbl.setAttribute('for', `child_${f}_${newN}`);
+      });
+    });
+  }
+
+  function updateAddBtn() {
+    const count = document.querySelectorAll('#childrenContainer .child-card').length;
+    document.getElementById('addChildBtn').innerHTML =
+      count === 0
+        ? '<i class="bi bi-plus-circle"></i> Add a child'
+        : '<i class="bi bi-plus-circle"></i> Add another child';
+  }
+
+  // Restore previously entered children on validation error
+  const POSTED_CHILDREN = {{ posted_children_json|safe }};
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if (POSTED_CHILDREN.length > 0) {
+      POSTED_CHILDREN.forEach(c => addChild(c.name, c.age, c.cls));
+    } else {
+      addChild(); // Start with one empty child row
+    }
+  });
+</script>
+</body>
+</html>
+

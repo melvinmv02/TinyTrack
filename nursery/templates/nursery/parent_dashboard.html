@@ -1,0 +1,121 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}Dashboard – TinyTrack{% endblock %}
+{% block topbar_title %}Parent Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header page-header-row">
+  <div>
+    <div class="page-header-title">Welcome back, {{ request.user.get_full_name|default:request.user.username }} 👋</div>
+    <div class="page-header-sub">Stay up to date with your child's nursery day.</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    {% if unread_notif_count %}
+    <a href="{% url 'notifications' %}" class="tt-btn" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;">
+      <i class="bi bi-bell-fill"></i> {{ unread_notif_count }} new
+    </a>
+    {% endif %}
+    <a href="{% url 'add_child' %}" class="tt-btn tt-btn-primary">
+      <i class="bi bi-person-plus-fill"></i> Add Child
+    </a>
+  </div>
+</div>
+
+<!-- Child Profile Cards -->
+{% for child in children %}
+<div class="tt-card mb-3" style="overflow:hidden;">
+  <div style="height:3px;background:linear-gradient(90deg,#4F46E5,#818CF8);"></div>
+  <div class="tt-card-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    {% if child.profile_picture %}
+      <img src="{{ child.profile_picture.url }}" class="profile-avatar-lg" alt="{{ child.name }}">
+    {% else %}
+      <div class="profile-avatar-placeholder" style="font-size:22px;">{{ child.name|first|upper }}</div>
+    {% endif %}
+    <div style="flex:1;min-width:180px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:17px;font-weight:700;color:var(--text-primary);">{{ child.name }}</div>
+        <a href="{% url 'edit_child_name' child.pk %}" class="tt-btn tt-btn-ghost tt-btn-sm" style="padding:2px 6px;color:var(--text-muted);" title="Edit Name">
+          <i class="bi bi-pencil" style="font-size:12px;"></i>
+        </a>
+      </div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">{{ child.student_class.name }} · Age {{ child.age }}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:12px;">
+        <span class="tt-badge badge-primary"><i class="bi bi-building" style="font-size:10px;"></i> {{ child.student_class.name }}</span>
+        <span class="tt-badge badge-gray">
+          <i class="bi bi-person" style="font-size:10px;"></i>
+          {% if child.student_class.teacher %}
+            {{ child.student_class.teacher.get_full_name|default:child.student_class.teacher.username }}
+          {% else %}
+            No teacher assigned
+          {% endif %}
+        </span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a href="{% url 'student_profile' %}?child={{ child.pk }}" class="tt-btn tt-btn-outline tt-btn-sm">
+        <i class="bi bi-person-badge"></i> Full Profile
+      </a>
+      <a href="{% url 'timeline' %}?child={{ child.pk }}" class="tt-btn tt-btn-primary tt-btn-sm">
+        <i class="bi bi-layers"></i> Timeline
+      </a>
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="tt-card">
+  <div class="tt-empty">
+    <div class="tt-empty-icon"><i class="bi bi-person-x"></i></div>
+    <div class="tt-empty-title">No children registered</div>
+    <div class="tt-empty-sub">Contact the school admin to link your account.</div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Quick Navigation -->
+<div class="row g-3 mt-2">
+  <div class="col-6 col-md-3">
+    <a href="{% url 'timeline' %}" class="action-tile">
+      <div class="tile-icon" style="background:#EEF2FF;color:#4F46E5;">
+        <i class="bi bi-layers-fill"></i>
+      </div>
+      <div class="tile-title">Timeline</div>
+      <div class="tile-sub">All activities & reports</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'attendance_history' %}" class="action-tile">
+      <div class="tile-icon" style="background:#D1FAE5;color:#059669;">
+        <i class="bi bi-calendar3"></i>
+      </div>
+      <div class="tile-title">Attendance</div>
+      <div class="tile-sub">History log</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'student_profile' %}" class="action-tile">
+      <div class="tile-icon" style="background:#FEE2E2;color:#DC2626;">
+        <i class="bi bi-person-badge-fill"></i>
+      </div>
+      <div class="tile-title">Child Profile</div>
+      <div class="tile-sub">View details</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'notifications' %}" class="action-tile" style="position:relative;">
+      {% if unread_notif_count %}
+        <div style="position:absolute;top:10px;right:10px;background:#EF4444;color:#fff;border-radius:99px;padding:1px 6px;font-size:10px;font-weight:700;">
+          {{ unread_notif_count }}
+        </div>
+      {% endif %}
+      <div class="tile-icon" style="background:#FEF3C7;color:#D97706;">
+        <i class="bi bi-bell-fill"></i>
+      </div>
+      <div class="tile-title">Notifications</div>
+      <div class="tile-sub">{% if unread_notif_count %}{{ unread_notif_count }} unread{% else %}All caught up{% endif %}</div>
+    </a>
+  </div>
+</div>
+
+{% endblock %}

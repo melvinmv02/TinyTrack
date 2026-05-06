@@ -1,0 +1,143 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}{{ student.name }}'s Profile – TinyTrack{% endblock %}
+{% block topbar_title %}Child Profile{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-title">{{ student.name }}'s Profile</div>
+  <div class="page-header-sub">A complete view of your child's information and today's summary</div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Profile Card -->
+  <div class="col-lg-4">
+    <div class="tt-card">
+      <div style="height:3px;background:linear-gradient(90deg,#4F46E5,#818CF8);border-radius:12px 12px 0 0;"></div>
+      <div class="tt-card-body" style="text-align:center;padding-top:28px;">
+        {% if student.profile_picture %}
+          <img src="{{ student.profile_picture.url }}" class="profile-avatar-lg" style="width:80px;height:80px;" alt="{{ student.name }}">
+        {% else %}
+          <div class="profile-avatar-placeholder" style="width:80px;height:80px;font-size:28px;margin:0 auto 12px;">
+            {{ student.name|first|upper }}
+          </div>
+        {% endif %}
+        <div style="font-size:18px;font-weight:700;margin-top:12px;">{{ student.name }}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Age {{ student.age }} years old</div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;text-align:left;">
+          <div class="info-pill">
+            <i class="bi bi-building"></i>
+            <div>
+              <span class="pill-label">Class</span>
+              <span class="pill-value">{{ student.student_class.name }}</span>
+            </div>
+          </div>
+          <div class="info-pill">
+            <i class="bi bi-person-check"></i>
+            <div>
+              <span class="pill-label">Teacher</span>
+              <span class="pill-value">
+                {% if student.student_class.teacher %}
+                  {{ student.student_class.teacher.get_full_name|default:student.student_class.teacher.username }}
+                {% else %}
+                  No teacher assigned
+                {% endif %}
+              </span>
+            </div>
+          </div>
+          <div class="info-pill">
+            <i class="bi bi-heart"></i>
+            <div>
+              <span class="pill-label">Parent</span>
+              <span class="pill-value">{{ student.parent.get_full_name|default:student.parent.username }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
+          <a href="{% url 'timeline' %}?child={{ student.pk }}" class="tt-btn tt-btn-primary tt-btn-full">
+            <i class="bi bi-layers"></i> View Timeline
+          </a>
+          <a href="{% url 'attendance_history' %}?child={{ student.pk }}" class="tt-btn tt-btn-outline tt-btn-full">
+            <i class="bi bi-calendar3"></i> Attendance History
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Latest Daily Report -->
+  <div class="col-lg-8">
+    <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">
+      <i class="bi bi-stars" style="color:#4F46E5;"></i> Latest Daily Report
+    </h3>
+
+    {% if latest_report %}
+    <div class="tt-card">
+      <div class="tt-card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span style="font-size:13px;color:var(--text-muted);">
+            <i class="bi bi-calendar3" style="margin-right:4px;"></i>{{ latest_report.date|date:"F d, Y" }}
+          </span>
+          <span class="tt-badge badge-primary">Daily Summary</span>
+        </div>
+
+        <!-- Emoji Grid -->
+        <div class="report-mini-grid" style="grid-template-columns:repeat({% if latest_report.mood and latest_report.food and latest_report.sleep %}3{% elif latest_report.mood and latest_report.food or latest_report.mood and latest_report.sleep or latest_report.food and latest_report.sleep %}2{% else %}1{% endif %},1fr);gap:12px;margin-bottom:16px;">
+          {% if latest_report.mood %}
+          <div class="report-mini-cell" style="padding:18px 10px;">
+            <div class="report-mini-emoji" style="font-size:30px;">
+              {% if latest_report.mood == 'Happy' %}😊{% elif latest_report.mood == 'Neutral' %}😐{% else %}😢{% endif %}
+            </div>
+            <div class="report-mini-label">Mood</div>
+            <div class="report-mini-val">{{ latest_report.mood }}</div>
+          </div>
+          {% endif %}
+          
+          {% if latest_report.food %}
+          <div class="report-mini-cell" style="padding:18px 10px;">
+            <div class="report-mini-emoji" style="font-size:30px;">
+              {% if latest_report.food == 'Ate Well' %}🍽️{% elif latest_report.food == 'Ate Little' %}🥄{% else %}❌{% endif %}
+            </div>
+            <div class="report-mini-label">Food</div>
+            <div class="report-mini-val">{{ latest_report.food }}</div>
+          </div>
+          {% endif %}
+          
+          {% if latest_report.sleep %}
+          <div class="report-mini-cell" style="padding:18px 10px;">
+            <div class="report-mini-emoji" style="font-size:30px;">
+              {% if latest_report.sleep == 'Slept Well' %}😴{% elif latest_report.sleep == 'Short Nap' %}💤{% else %}⚡{% endif %}
+            </div>
+            <div class="report-mini-label">Sleep</div>
+            <div class="report-mini-val">{{ latest_report.sleep }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if latest_report.activity_notes %}
+        <div style="background:var(--bg);border:1px solid var(--border);border-left:3px solid #4F46E5;border-radius:var(--radius-sm);padding:12px 14px;">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px;">
+            Teacher Notes
+          </div>
+          <p style="font-size:13.5px;color:var(--text-primary);margin:0;line-height:1.6;">{{ latest_report.activity_notes }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="tt-card">
+      <div class="tt-empty">
+        <div class="tt-empty-icon"><i class="bi bi-journal-x"></i></div>
+        <div class="tt-empty-title">No reports yet</div>
+        <div class="tt-empty-sub">Your child's teacher hasn't submitted a daily report yet.</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Registration – TinyTrack</title>
+  <link href="{% static 'nursery/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'nursery/css/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'nursery/css/style.css' %}" rel="stylesheet">
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card" style="max-width:480px;">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="logo-icon">T</div>
+      <div class="logo-text">TinyTrack</div>
+    </div>
+
+    <h1 class="auth-title">Teacher registration</h1>
+    <p class="auth-sub">Join the nursery team and manage your class</p>
+
+    <!-- Form errors (non-field) -->
+    {% if form.non_field_errors %}
+    <div class="tt-alert tt-alert-error" style="margin-bottom:16px;">
+      <i class="bi bi-exclamation-circle"></i> {{ form.non_field_errors|join:", " }}
+    </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      <!-- Name row -->
+      <div class="row g-2 mb-1">
+        <div class="col-6">
+          <div class="tt-form-group">
+            <label class="tt-label" for="id_first_name">First Name</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}
+              <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.first_name.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="tt-form-group">
+            <label class="tt-label" for="id_last_name">Last Name</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}
+              <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.last_name.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Username -->
+      <div class="tt-form-group">
+        <label class="tt-label" for="id_username">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+          <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.username.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Email -->
+      <div class="tt-form-group">
+        <label class="tt-label" for="id_email">Email <span style="color:var(--text-light);font-weight:400;">(optional)</span></label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.email.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Class Selection -->
+      <div class="tt-form-group">
+        <label class="tt-label" for="id_student_class">Assign to Class</label>
+        {{ form.student_class }}
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+          Note: Classes are created by administrators.
+        </div>
+        {% if form.student_class.errors %}
+          <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.student_class.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Password -->
+      <div class="tt-form-group">
+        <label class="tt-label" for="id_password">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}
+          <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.password.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="tt-form-group" style="margin-bottom:20px;">
+        <label class="tt-label" for="id_confirm_password">Confirm Password</label>
+        {{ form.confirm_password }}
+        {% if form.confirm_password.errors %}
+          <div style="color:#DC2626;font-size:12px;margin-top:3px;">{{ form.confirm_password.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="tt-btn tt-btn-primary tt-btn-full" style="padding:10px;font-size:14px;">
+        <i class="bi bi-person-check"></i> Register as Teacher
+      </button>
+    </form>
+
+    <!-- Sign in link -->
+    <div style="text-align:center;margin-top:20px;font-size:13px;color:var(--text-muted);">
+      Already have an account?
+      <a href="{% url 'login' %}" style="color:#4F46E5;font-weight:600;">Sign in</a>
+    </div>
+
+    <!-- Back link -->
+    <div style="text-align:center;margin-top:10px;">
+      <a href="{% url 'home' %}" style="font-size:13px;color:var(--text-muted);">
+        <i class="bi bi-arrow-left" style="font-size:11px;"></i> Back to home
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script src="{% static 'nursery/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

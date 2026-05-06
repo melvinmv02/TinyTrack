@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In – TinyTrack</title>
+  <link href="{% static 'nursery/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'nursery/css/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'nursery/css/style.css' %}" rel="stylesheet">
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="logo-icon">T</div>
+      <div class="logo-text">TinyTrack</div>
+    </div>
+
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-sub">Sign in to your account to continue</p>
+
+    <!-- Error Alert -->
+    {% if error %}
+    <div class="tt-alert tt-alert-error" style="margin-bottom:16px;">
+      <i class="bi bi-exclamation-circle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Login Form -->
+    <form method="POST">
+      {% csrf_token %}
+
+      <div class="tt-form-group">
+        <label class="tt-label" for="username">Username</label>
+        <input
+          id="username"
+          class="tt-input"
+          type="text"
+          name="username"
+          placeholder="Enter your username"
+          autocomplete="username"
+          required
+          autofocus
+        >
+      </div>
+
+      <div class="tt-form-group" style="margin-bottom:20px;">
+        <label class="tt-label" for="password">Password</label>
+        <input
+          id="password"
+          class="tt-input"
+          type="password"
+          name="password"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+          required
+        >
+      </div>
+
+      <button type="submit" class="tt-btn tt-btn-primary tt-btn-full" style="padding:10px;font-size:14px;">
+        <i class="bi bi-box-arrow-in-right"></i> Sign In
+      </button>
+    </form>
+
+    <!-- Back + Register links -->
+    <div style="text-align:center;margin-top:20px;font-size:13px;color:var(--text-muted);">
+      New parent?
+      <a href="{% url 'register' %}" style="color:#4F46E5;font-weight:600;">Create an account</a>
+    </div>
+    <div style="text-align:center;margin-top:8px;font-size:13px;color:var(--text-muted);">
+      New teacher?
+      <a href="{% url 'register_teacher' %}" style="color:#4F46E5;font-weight:600;">Join the team</a>
+    </div>
+    <div style="text-align:center;margin-top:8px;">
+      <a href="{% url 'home' %}" style="font-size:13px;color:var(--text-muted);">
+        <i class="bi bi-arrow-left" style="font-size:11px;"></i> Back to home
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script src="{% static 'nursery/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

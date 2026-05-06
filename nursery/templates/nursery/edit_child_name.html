@@ -1,0 +1,44 @@
+{% extends 'nursery/base.html' %}
+
+{% block title %}Edit Child Name – TinyTrack{% endblock %}
+{% block topbar_title %}Edit Child Name{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="tt-card">
+      <div class="tt-card-body">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text-primary);">Update Name</h2>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:24px;">Update the name for <strong>{{ student.name }}</strong>.</p>
+
+        <form method="POST" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="tt-alert tt-alert-error mb-3">
+            <i class="bi bi-exclamation-circle"></i> {{ form.non_field_errors|join:", " }}
+          </div>
+          {% endif %}
+
+          <div class="tt-form-group">
+            <label class="tt-label" for="{{ form.name.id_for_label }}">Full Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+              <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ form.name.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mt-4 pt-2" style="display:flex;gap:12px;">
+            <button type="submit" class="tt-btn tt-btn-primary" style="flex:1;">
+              <i class="bi bi-check-lg"></i> Save Changes
+            </button>
+            <a href="{% url 'parent_dashboard' %}" class="tt-btn tt-btn-outline" style="flex:1;text-align:center;">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
